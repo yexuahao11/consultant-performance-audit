@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>咨询师绩效造假分析工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        .upload-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .section-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .upload-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #4a90d9;
+            background: #f0f7ff;
+        }
+        .upload-zone.uploaded {
+            border-color: #67c23a;
+            background: #f0f9eb;
+        }
+        .upload-zone.error {
+            border-color: #f56c6c;
+            background: #fef0f0;
+        }
+        .upload-zone.uploading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        .upload-text {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .upload-hint {
+            font-size: 12px;
+            color: #999;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-name {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #4a90d9;
+            word-break: break-all;
+        }
+        .file-name.ready {
+            color: #67c23a;
+        }
+        .filter-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .filter-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .range-input {
+            padding: 10px 14px;
+            border: 1px solid #dcdfe6;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 160px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .range-input:focus {
+            border-color: #4a90d9;
+        }
+        .range-hint {
+            font-size: 12px;
+            color: #999;
+        }
+        .analyze-btn {
+            background: #4a90d9;
+            color: #fff;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 16px;
+        }
+        .analyze-btn:hover:not(:disabled) {
+            background: #357abd;
+        }
+        .analyze-btn:disabled {
+            background: #c0c4cc;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .loading.show {
+            display: block;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #4a90d9;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #666;
+            font-size: 14px;
+        }
+        .results {
+            display: none;
+        }
+        .results.show {
+            display: block;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .card-label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .card-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        .card-value.warning {
+            color: #e6a23c;
+        }
+        .card-value.danger {
+            color: #f56c6c;
+        }
+        .card-value.info {
+            color: #409eff;
+        }
+        .section-title {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+        .table-wrapper {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 0;
+        }
+        td {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover td {
+            background: #fafafa;
+        }
+        .cash {
+            font-weight: 500;
+            color: #e6a23c;
+        }
+        .warning-flag {
+            color: #f56c6c;
+            font-weight: 600;
+        }
+        .detail-btn {
+            background: #409eff;
+            color: #fff;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .detail-btn:hover {
+            background: #66b1ff;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-close:hover {
+            color: #666;
+        }
+        .detail-section {
+            margin-bottom: 24px;
+        }
+        .detail-section-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .error-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            color: #f56c6c;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .error-title {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .error-message {
+            font-size: 13px;
+            color: #666;
+        }
+        .range-display {
+            background: #ecf5ff;
+            color: #409eff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .reset-btn {
+            background: #fff;
+            color: #666;
+            border: 1px solid #dcdfe6;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 16px;
+        }
+        .reset-btn:hover {
+            border-color: #4a90d9;
+            color: #4a90d9;
+        }
+        .module2-section {
+            margin-top: 20px;
+        }
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(to right, #4a90d9, #67c23a, #e6a23c, #f56c6c);
+            margin: 30px 0;
+            border-radius: 2px;
+        }
+        .section-divider2 {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 40px 0;
+        }
+        .schedule-error {
+            color: #f56c6c;
+        }
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin-bottom: 30px;
+        }
+        .tab-btn {
+            padding: 12px 40px;
+            border: none;
+            background: #e0e0e0;
+            color: #666;
+            font-size: 15px;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover {
+            background: #d0d0d0;
+        }
+        .tab-btn.active {
+            background: #4a90d9;
+            color: #fff;
+        }
+        .module-content {
+            display: none;
+        }
+        .module-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>咨询师绩效造假分析工具</h1>
+        <p class="subtitle">基于可疑业绩达成率区间 + 绩效明细联合分析</p>
+
+        <div class="tab-container">
+            <button class="tab-btn active" id="tab1Btn" onclick="switchTab(1)">模块一：可疑业绩区间分析</button>
+            <button class="tab-btn" id="tab2Btn" onclick="switchTab(2)">模块二：排班休息日异常分析</button>
+        </div>
+
+        <div class="module-content active" id="module1">
+        <div class="upload-section">
+            <div class="section-label">📤 请上传两个Excel文件</div>
+
+            <div class="upload-zone" id="uploadZone1" data-type="perf">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text">点击或拖拽上传「咨询师绩效分析」Excel</div>
+                <div class="upload-hint">包含 病历号、咨询师、现金类实收、收费机构 等字段</div>
+                <div class="file-name" id="fileName1"></div>
+                <input type="file" class="file-input" id="fileInput1" accept=".xlsx">
+            </div>
+
+            <div class="upload-zone" id="uploadZone2" data-type="rate">
+                <div class="upload-icon">📈</div>
+                <div class="upload-text">点击或拖拽上传「咨询师业绩达成率」Excel</div>
+                <div class="upload-hint">包含 院区、咨询师、业绩完成率 等字段</div>
+                <div class="file-name" id="fileName2"></div>
+                <input type="file" class="file-input" id="fileInput2" accept=".xlsx">
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <div class="section-label">🎯 设置可疑区间</div>
+            <div class="filter-row">
+                <div class="filter-item">
+                    <span class="filter-label">可疑业绩达成率区间:</span>
+                    <input type="text" class="range-input" id="rangeInput" placeholder="如: 100%-105%" value="100%-105%">
+                    <span class="range-hint">输入百分比区间</span>
+                </div>
+            </div>
+            <button class="analyze-btn" id="analyzeBtn" disabled>开始分析</button>
+            <button class="reset-btn" id="resetBtn">重置</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">正在分析数据，请稍候...</div>
+        </div>
+
+        <div class="error-box" id="error" style="display:none;">
+            <div class="error-title">分析失败</div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="summary-cards">
+                <div class="card">
+                    <div class="card-label">可疑院区数</div>
+                    <div class="card-value info" id="suspiciousOrgs"></div>
+                </div>
+                <div class="card">
+                    <div class="card-label">可疑咨询师数</div>
+                    <div class="card-value warning" id="suspiciousConsultants"></div>
+                </div>
+                <div class="card">
+                    <div class="card-label">存疑情况数</div>
+                    <div class="card-value danger" id="suspiciousCount"></div>
+                </div>
+                <div class="card">
+                    <div class="card-label">存疑现金总额</div>
+                    <div class="card-value danger" id="totalCash"></div>
+                </div>
+            </div>
+
+            <div class="section-title">
+                筛选条件: <span class="range-display" id="rangeDisplay"></span>
+            </div>
+
+            <div class="section-title">按收费机构汇总</div>
+            <div class="table-wrapper">
+                <table id="summaryTable">
+                    <thead>
+                        <tr>
+                            <th>收费机构</th>
+                            <th>院区</th>
+                            <th>存疑病历号数</th>
+                            <th>现金实收总额</th>
+                            <th>涉及咨询师</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryBody"></tbody>
+                </table>
+            </div>
+
+            <div class="section-title">存疑明细（按现金总额排序）</div>
+            <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>病历号</th>
+                            <th>收费机构</th>
+                            <th>院区</th>
+                            <th>涉及咨询师数</th>
+                            <th>涉及咨询师</th>
+                            <th>可疑咨询师</th>
+                            <th>现金实收总额</th>
+                            <th>备注</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailBody"></tbody>
+                </table>
+            </div>
+        </div>
+        </div><!-- end module1 -->
+
+        <!-- 模块2：休息日异常分析 -->
+        <div class="module-content" id="module2">
+        <div class="module2-section" id="module2Section">
+
+            <div class="upload-section">
+                <div class="section-label">📤 请上传两个Excel文件</div>
+
+                <div class="upload-zone" id="uploadZone3" data-type="schedule-perf">
+                    <div class="upload-icon">📊</div>
+                    <div class="upload-text">点击或拖拽上传「咨询师绩效分析」Excel</div>
+                    <div class="upload-hint">包含 病历号、咨询师、现金类实收、收费时间、收费机构 等字段</div>
+                    <div class="file-name" id="fileName3"></div>
+                    <input type="file" class="file-input" id="fileInput3" accept=".xlsx">
+                </div>
+
+                <div class="upload-zone" id="uploadZone4" data-type="schedule">
+                    <div class="upload-icon">📅</div>
+                    <div class="upload-text">点击或拖拽上传「咨询师排班表」Excel</div>
+                    <div class="upload-hint">包含 咨询师、日期、排班状态 等字段，休息日标记为"休息"</div>
+                    <div class="file-name" id="fileName4"></div>
+                    <input type="file" class="file-input" id="fileInput4" accept=".xlsx">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <button class="analyze-btn" id="analyzeScheduleBtn" disabled>开始分析</button>
+                <button class="reset-btn" id="resetScheduleBtn">重置</button>
+            </div>
+
+            <div class="loading" id="scheduleLoading">
+                <div class="spinner"></div>
+                <div class="loading-text">正在分析休息日异常，请稍候...</div>
+            </div>
+
+            <div class="error-box" id="scheduleError" style="display:none;">
+                <div class="error-title">分析失败</div>
+                <div class="error-message" id="scheduleErrorMessage"></div>
+            </div>
+
+            <div class="results" id="scheduleResults">
+                <div class="summary-cards">
+                    <div class="card">
+                        <div class="card-label">休息日异常人数</div>
+                        <div class="card-value danger" id="scheduleSuspiciousCount">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">异常记录数</div>
+                        <div class="card-value danger" id="scheduleRecordCount">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">涉及总金额</div>
+                        <div class="card-value danger" id="scheduleTotalCash">0</div>
+                    </div>
+                </div>
+
+                <div class="section-title">休息日异常明细</div>
+                <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>咨询师</th>
+                                <th>异常日期</th>
+                                <th>排班状态</th>
+                                <th>病历号</th>
+                                <th>收费时间</th>
+                                <th>现金类实收</th>
+                                <th>收费机构</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleDetailBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">详细分析报告</div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let file1 = null;
+        let file2 = null;
+        let lastResultData = null;
+
+        const uploadZone1 = document.getElementById('uploadZone1');
+        const uploadZone2 = document.getElementById('uploadZone2');
+        const fileInput1 = document.getElementById('fileInput1');
+        const fileInput2 = document.getElementById('fileInput2');
+        const fileName1 = document.getElementById('fileName1');
+        const fileName2 = document.getElementById('fileName2');
+        const rangeInput = document.getElementById('rangeInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function setupUploadZone(zone, input, nameEl, type) {
+            zone.addEventListener('click', () => input.click());
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0], type);
+                }
+            });
+
+            input.addEventListener('change', () => {
+                if (input.files.length > 0) {
+                    handleFile(input.files[0], type);
+                }
+            });
+        }
+
+        function handleFile(file, type) {
+            if (!file.name.endsWith('.xlsx')) {
+                showError('请上传 .xlsx 格式的 Excel 文件');
+                return;
+            }
+
+            if (type === 'perf') {
+                file1 = file;
+                fileName1.textContent = file.name;
+                fileName1.classList.add('ready');
+                uploadZone1.classList.add('uploaded');
+            } else {
+                file2 = file;
+                fileName2.textContent = file.name;
+                fileName2.classList.add('ready');
+                uploadZone2.classList.add('uploaded');
+            }
+
+            updateAnalyzeBtn();
+        }
+
+        function updateAnalyzeBtn() {
+            analyzeBtn.disabled = !(file1 && file2);
+        }
+
+        setupUploadZone(uploadZone1, fileInput1, fileName1, 'perf');
+        setupUploadZone(uploadZone2, fileInput2, fileName2, 'rate');
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!file1 || !file2) return;
+
+            const range = rangeInput.value.trim();
+            if (!range) {
+                showError('请输入可疑区间');
+                return;
+            }
+
+            analyzeBtn.disabled = true;
+            loading.classList.add('show');
+            results.classList.remove('show');
+            error.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('perfFile', file1);
+            formData.append('rateFile', file2);
+            formData.append('rangeInput', range);
+
+            try {
+                const response = await fetch('/analyze2', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '分析失败');
+                }
+
+                showResults(data);
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.classList.remove('show');
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            file1 = null;
+            file2 = null;
+            fileName1.textContent = '';
+            fileName1.classList.remove('ready');
+            fileName2.textContent = '';
+            fileName2.classList.remove('ready');
+            uploadZone1.classList.remove('uploaded');
+            uploadZone2.classList.remove('uploaded');
+            uploadZone1.classList.remove('error');
+            uploadZone2.classList.remove('error');
+            results.classList.remove('show');
+            error.style.display = 'none';
+            updateAnalyzeBtn();
+        });
+
+        function showResults(data) {
+            lastResultData = data;
+            document.getElementById('suspiciousOrgs').textContent = data.summary.suspiciousOrgCount;
+            document.getElementById('suspiciousConsultants').textContent = data.summary.suspiciousConsultantCount;
+            document.getElementById('suspiciousCount').textContent = data.summary.suspiciousCount;
+            document.getElementById('totalCash').textContent = formatCash(data.summary.totalSuspiciousCash);
+
+            const rangeDisplay = document.getElementById('rangeDisplay');
+            rangeDisplay.textContent = (data.summary.rangeMin * 100).toFixed(1) + '% ~ ' + (data.summary.rangeMax * 100).toFixed(1) + '%';
+
+            // Summary table
+            const summaryBody = document.getElementById('summaryBody');
+            summaryBody.innerHTML = '';
+
+            const byOrg = {};
+            for (const s of data.suspicious) {
+                const key = s.收费机构 + '|' + s.院区;
+                if (!byOrg[key]) {
+                    byOrg[key] = { 收费机构: s.收费机构, 院区: s.院区, count: 0, totalCash: 0, consultants: new Set() };
+                }
+                byOrg[key].count++;
+                byOrg[key].totalCash += s.现金实收总额;
+                s.涉及咨询师.split(';').forEach(c => byOrg[key].consultants.add(c.trim()));
+            }
+
+            const summaryRows = Object.values(byOrg).sort((a, b) => b.totalCash - a.totalCash);
+
+            for (const row of summaryRows) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHtml(row.收费机构)}</td>
+                    <td>${escapeHtml(row.院区)}</td>
+                    <td>${row.count}</td>
+                    <td class="cash">${formatCash(row.totalCash)}</td>
+                    <td>${escapeHtml([...row.consultants].join('; '))}</td>
+                `;
+                summaryBody.appendChild(tr);
+            }
+
+            // Detail table
+            const detailBody = document.getElementById('detailBody');
+            detailBody.innerHTML = '';
+
+            for (const row of data.suspicious.slice(0, 200)) {
+                const tr = document.createElement('tr');
+                const warningFlag = row.高度异常 ? `<span class="warning-flag">${row.高度异常}</span>` : '';
+                const detailBtn = `<button class="detail-btn" onclick="showDetail('${escapeHtml(row.病历号)}', '${escapeHtml(row.可疑咨询师)}')">详细说明</button>`;
+                tr.innerHTML = `
+                    <td>${escapeHtml(row.病历号)}</td>
+                    <td>${escapeHtml(row.收费机构)}</td>
+                    <td>${escapeHtml(row.院区)}</td>
+                    <td>${row.涉及咨询师数}</td>
+                    <td>${escapeHtml(row.涉及咨询师)}</td>
+                    <td>${escapeHtml(row.可疑咨询师 || '')}</td>
+                    <td class="cash">${formatCash(row.现金实收总额)}</td>
+                    <td>${warningFlag}</td>
+                    <td>${detailBtn}</td>
+                `;
+                detailBody.appendChild(tr);
+            }
+
+            results.classList.add('show');
+        }
+
+        function showDetail(病历号, 可疑咨询师) {
+            if (!file1) {
+                alert('请先上传绩效明细文件');
+                return;
+            }
+
+            document.getElementById('modalTitle').textContent = `详细分析报告 - ${病历号}`;
+            document.getElementById('modalContent').innerHTML = '<div class="loading-text">正在加载详细数据...</div>';
+            document.getElementById('detailModal').classList.add('show');
+
+            const formData = new FormData();
+            formData.append('perfFile', file1);
+            formData.append('病历号', 病历号);
+            formData.append('可疑咨询师', 可疑咨询师);
+
+            fetch('/getDetail', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Detail response:', data);
+                if (data.error) {
+                    document.getElementById('modalContent').innerHTML = `<div class="error-box"><div class="error-message">${escapeHtml(data.error)}</div></div>`;
+                    return;
+                }
+                renderDetailReport(data);
+            })
+            .catch(err => {
+                document.getElementById('modalContent').innerHTML = `<div class="error-box"><div class="error-message">${escapeHtml(err.message)}</div></div>`;
+            });
+        }
+
+        function renderDetailReport(data) {
+            let html = '';
+
+            // Debug info
+            if (data.error || data._debugStr) {
+                html += '<div class="detail-section"><div class="detail-section-title">调试信息</div><pre style="font-size:11px;background:#f5f5f5;padding:10px;overflow:auto;">';
+                if (data._debugStr) html += data._debugStr + '\n';
+                if (data.error) html += 'ERROR: ' + JSON.stringify(data.error);
+                if (data.raw) html += '\nRAW: ' + data.raw;
+                html += '</pre></div>';
+            }
+
+            // 1. 可疑咨询师在该病历号中的记录
+            html += '<div class="detail-section">';
+            html += '<div class="detail-section-title">1. 可疑咨询师在当前病历号中的所有记录</div>';
+            html += '<table><thead><tr><th>咨询师</th><th>收费时间</th><th>现金类实收</th><th>收费机构</th></tr></thead><tbody>';
+            for (const r of data.当前病历记录) {
+                html += `<tr><td>${escapeHtml(r.咨询师)}</td><td>${r.收费时间 || ''}</td><td class="cash">${formatCash(r.现金类实收)}</td><td>${escapeHtml(r.收费机构 || '')}</td></tr>`;
+            }
+            html += '</tbody></table></div>';
+
+            // 2. 可疑咨询师在当月高点日期的记录
+            if (data.当月高点日期记录 && data.当月高点日期记录.length > 0) {
+                html += '<div class="detail-section">';
+                html += `<div class="detail-section-title">2. 可疑咨询师在${data.当月}月高点日期(${data.高点日期})的现金记录</div>`;
+                html += '<table><thead><tr><th>病历号</th><th>咨询师</th><th>收费时间</th><th>现金类实收</th><th>收费机构</th></tr></thead><tbody>';
+                let dayTotal = 0;
+                for (const r of data.当月高点日期记录) {
+                    html += `<tr><td>${escapeHtml(r.病历号)}</td><td>${escapeHtml(r.咨询师)}</td><td>${r.收费时间 || ''}</td><td class="cash">${formatCash(r.现金类实收)}</td><td>${escapeHtml(r.收费机构 || '')}</td></tr>`;
+                    dayTotal += r.现金类实收;
+                }
+                html += `<tr style="font-weight:bold;"><td colspan="3">当日合计</td><td class="cash">${formatCash(dayTotal)}</td><td></td></tr>`;
+                html += '</tbody></table></div>';
+            }
+
+            // 3. 可疑咨询师在当月1日至高点日期之前的记录
+            if (data.当月前期记录 && data.当月前期记录.length > 0) {
+                html += '<div class="detail-section">';
+                html += `<div class="detail-section-title">3. 可疑咨询师在${data.当月}月1日至${data.高点日期}之前的现金记录</div>`;
+                html += '<table><thead><tr><th>病历号</th><th>咨询师</th><th>收费时间</th><th>现金类实收</th><th>收费机构</th></tr></thead><tbody>';
+                let periodTotal = 0;
+                for (const r of data.当月前期记录) {
+                    html += `<tr><td>${escapeHtml(r.病历号)}</td><td>${escapeHtml(r.咨询师)}</td><td>${r.收费时间 || ''}</td><td class="cash">${formatCash(r.现金类实收)}</td><td>${escapeHtml(r.收费机构 || '')}</td></tr>`;
+                    periodTotal += r.现金类实收;
+                }
+                html += `<tr style="font-weight:bold;"><td colspan="3">前期合计</td><td class="cash">${formatCash(periodTotal)}</td><td></td></tr>`;
+                html += '</tbody></table></div>';
+
+                // 汇总对比
+                const dayTotal = data.当月高点日期记录 ? data.当月高点日期记录.reduce((sum, r) => sum + r.现金类实收, 0) : 0;
+                html += '<div class="detail-section">';
+                html += '<div class="detail-section-title">4. 对比分析</div>';
+                html += `<p><b>当月1日至高点日期前现金合计:</b> ${formatCash(periodTotal)} 元</p>`;
+                html += `<p><b>高点日期当日现金合计:</b> ${formatCash(dayTotal)} 元</p>`;
+                html += `<p><b>占比:</b> ${periodTotal > 0 ? ((dayTotal / periodTotal) * 100).toFixed(1) : 0}%</p>`;
+                html += '</div>';
+            } else {
+                html += '<div class="detail-section">';
+                html += `<div class="detail-section-title">3. 可疑咨询师在${data.当月}月1日至${data.高点日期}之前的现金记录</div>`;
+                html += '<p>无记录</p>';
+                html += '</div>';
+            }
+
+            document.getElementById('modalContent').innerHTML = html;
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            error.style.display = 'block';
+            results.classList.remove('show');
+        }
+
+        function formatCash(num) {
+            return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ==================== 模块2：休息日异常分析 ====================
+        let file3 = null;  // 绩效分析
+        let file4 = null;  // 排班表
+
+        const uploadZone3 = document.getElementById('uploadZone3');
+        const uploadZone4 = document.getElementById('uploadZone4');
+        const fileInput3 = document.getElementById('fileInput3');
+        const fileInput4 = document.getElementById('fileInput4');
+        const fileName3 = document.getElementById('fileName3');
+        const fileName4 = document.getElementById('fileName4');
+        const analyzeScheduleBtn = document.getElementById('analyzeScheduleBtn');
+        const resetScheduleBtn = document.getElementById('resetScheduleBtn');
+        const scheduleLoading = document.getElementById('scheduleLoading');
+        const scheduleResults = document.getElementById('scheduleResults');
+        const scheduleError = document.getElementById('scheduleError');
+        const scheduleErrorMessage = document.getElementById('scheduleErrorMessage');
+
+        function setupUploadZoneM2(zone, input, nameEl, type) {
+            zone.addEventListener('click', () => input.click());
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileM2(files[0], type);
+                }
+            });
+            input.addEventListener('change', () => {
+                if (input.files.length > 0) {
+                    handleFileM2(input.files[0], type);
+                }
+            });
+        }
+
+        function handleFileM2(file, type) {
+            console.log('handleFileM2 called:', type, file.name);
+            if (!file.name.endsWith('.xlsx')) {
+                showScheduleError('请上传 .xlsx 格式的 Excel 文件');
+                return;
+            }
+            if (type === 'schedule-perf') {
+                file3 = file;
+                fileName3.textContent = file.name;
+                fileName3.classList.add('ready');
+                uploadZone3.classList.add('uploaded');
+            } else {
+                file4 = file;
+                fileName4.textContent = file.name;
+                fileName4.classList.add('ready');
+                uploadZone4.classList.add('uploaded');
+            }
+            console.log('file3:', file3 ? file3.name : null);
+            console.log('file4:', file4 ? file4.name : null);
+            updateScheduleBtn();
+        }
+
+        function updateScheduleBtn() {
+            analyzeScheduleBtn.disabled = !(file3 && file4);
+        }
+
+        setupUploadZoneM2(uploadZone3, fileInput3, fileName3, 'schedule-perf');
+        setupUploadZoneM2(uploadZone4, fileInput4, fileName4, 'schedule');
+
+        analyzeScheduleBtn.addEventListener('click', async () => {
+            console.log('file3:', file3);
+            console.log('file4:', file4);
+            if (!file3 || !file4) {
+                alert('请上传两个文件');
+                return;
+            }
+            analyzeScheduleBtn.disabled = true;
+            scheduleLoading.classList.add('show');
+            scheduleResults.classList.remove('show');
+            scheduleError.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('perfFile', file3);
+            formData.append('scheduleFile', file4);
+
+            try {
+                console.log('Sending request...');
+                const response = await fetch('/analyzeSchedule', {
+                    method: 'POST',
+                    body: formData
+                });
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                if (!response.ok) {
+                    throw new Error(data.error || '分析失败');
+                }
+                showScheduleResults(data);
+            } catch (err) {
+                console.error('Error:', err);
+                showScheduleError(err.message);
+            } finally {
+                scheduleLoading.classList.remove('show');
+                analyzeScheduleBtn.disabled = false;
+            }
+        });
+
+        resetScheduleBtn.addEventListener('click', () => {
+            file3 = null;
+            file4 = null;
+            fileName3.textContent = '';
+            fileName3.classList.remove('ready');
+            fileName4.textContent = '';
+            fileName4.classList.remove('ready');
+            uploadZone3.classList.remove('uploaded');
+            uploadZone4.classList.remove('uploaded');
+            scheduleResults.classList.remove('show');
+            scheduleError.style.display = 'none';
+            updateScheduleBtn();
+        });
+
+        function showScheduleResults(data) {
+            document.getElementById('scheduleSuspiciousCount').textContent = data.suspiciousConsultants || 0;
+            document.getElementById('scheduleRecordCount').textContent = data.suspiciousRecords || 0;
+            document.getElementById('scheduleTotalCash').textContent = formatCash(data.totalCash || 0);
+
+            const tbody = document.getElementById('scheduleDetailBody');
+            tbody.innerHTML = '';
+
+            for (const row of (data.records || []).slice(0, 2000)) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHtml(row.咨询师)}</td>
+                    <td>${row.异常日期}</td>
+                    <td class="schedule-error">${escapeHtml(row.排班状态)}</td>
+                    <td>${escapeHtml(row.病历号 || '')}</td>
+                    <td>${row.收费时间 || ''}</td>
+                    <td class="cash">${formatCash(row.现金类实收)}</td>
+                    <td>${escapeHtml(row.收费机构 || '')}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            scheduleResults.classList.add('show');
+        }
+
+        function showScheduleError(msg) {
+            scheduleErrorMessage.textContent = msg;
+            scheduleError.style.display = 'block';
+            scheduleResults.classList.remove('show');
+        }
+
+        // Tab switching
+        function switchTab(tabNum) {
+            const tab1Btn = document.getElementById('tab1Btn');
+            const tab2Btn = document.getElementById('tab2Btn');
+            const module1 = document.getElementById('module1');
+            const module2 = document.getElementById('module2');
+
+            if (tabNum === 1) {
+                tab1Btn.classList.add('active');
+                tab2Btn.classList.remove('active');
+                module1.classList.add('active');
+                module2.classList.remove('active');
+            } else {
+                tab1Btn.classList.remove('active');
+                tab2Btn.classList.add('active');
+                module1.classList.remove('active');
+                module2.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
