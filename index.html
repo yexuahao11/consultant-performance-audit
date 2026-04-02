@@ -664,6 +664,36 @@
         .card-value.warning { color: var(--accent-yellow); }
         .card-value.danger { color: var(--accent-red); }
         .card-value.success { color: var(--accent-green); }
+
+        /* Export button */
+        .export-btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--accent-green);
+            background: transparent;
+            color: var(--accent-green);
+            margin-left: auto;
+        }
+
+        .export-btn:hover {
+            background: var(--accent-green);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(63, 185, 80, 0.3);
+        }
+
+        /* Table footer */
+        .table-footer {
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
     </style>
 </head>
 <body>

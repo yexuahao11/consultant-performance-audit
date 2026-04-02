@@ -87,7 +87,7 @@ function SuspiciousAnalysis() {
               { label: '存疑现金总额', value: formatCash(results.summary.totalSuspiciousCash), type: 'danger' }
             ]}
           />
-          <ResultsTable data={results.suspicious} />
+          <ResultsTable data={results.suspicious} exportName="可疑业绩分析" />
         </div>
       )}
     </div>
