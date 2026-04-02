@@ -72,7 +72,7 @@ function ScheduleAnalysis() {
               { label: '涉及总金额', value: formatCash(results.totalCash), type: 'danger' }
             ]}
           />
-          <ResultsTable data={results.records} />
+          <ResultsTable data={results.records} exportName="排班异常分析" />
         </div>
       )}
     </div>
